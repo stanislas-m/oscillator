@@ -9,6 +9,20 @@
 (* Initialisation de GTK. *)
 let _ = GMain.init ()
 
+(**
+* Traitement des données 
+*)
+
+(**
+* Accesseurs 
+*)
+let test () = print_endline "Click";
+flush stdout
+
+(**
+* Gestion de l'affichage
+*)
+
 (* Fenêtre principale de l'application. *)
 let window = GWindow.window 
   ~title:"Oscillateur mécanique et électrocinétique" 
@@ -22,6 +36,13 @@ let vbox = GPack.vbox
   ~border_width:10
   ~packing:window#add ()
 
+let mainTitle = GMisc.label ~markup:"<span font_size='xx-large'><b>Bienvenue !</b></span>" ~packing:vbox#add ()
+
+let subTitle = GMisc.label ~markup:"<span font_size='large'>Veuillez choisir un type d'oscillateur :</span>" ~packing:vbox#add ()
+
+
+let menuFrame = GBin.frame ~label:"Oscillateurs disponibles"
+    ~packing:(vbox#pack ~expand:true ~fill:true ~padding:10) ~height:300 ()
 let _ =
   window#connect#destroy ~callback:GMain.quit;
   window#show ();
