@@ -32,7 +32,7 @@ Mémo git
 - Vérifier qu'il n'y a pas de modif sur le dépôt, et les récupérer éventuellement : git pull
 - Publier ses modifications :
 	- git commit -a, entrer un message de commit suffisament clair pour comprendre les modifs effectuées
-	- git push, pour publier sur le dépôt
+	- git push origin master, pour publier sur le dépôt
 
 
 Ressources Physique
