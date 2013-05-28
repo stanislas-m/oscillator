@@ -33,3 +33,9 @@ Mémo git
 - Publier ses modifications :
 	- git commit -a, entrer un message de commit suffisament clair pour comprendre les modifs effectuées
 	- git push, pour publier sur le dépôt
+
+
+Ressources Physique
+-------------------
+- pulsation propre : ω = (k/m)^(1/2)
+- facteur de qualité : Q = (Ωr)/(Δω)
