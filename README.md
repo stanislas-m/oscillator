@@ -39,3 +39,11 @@ Ressources Physique
 -------------------
 - pulsation propre : ω = (k/m)^(1/2)
 - facteur de qualité : Q = (Ωr)/(Δω)
+- caractéritique oscillateur mécanique : 
+	- période : T = 2π(m/k)^(1/2)
+	- équation différentielle du mouvement : 
+
+
+
+
+
