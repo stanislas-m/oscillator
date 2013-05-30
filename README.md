@@ -12,8 +12,8 @@ TODO
 	- Choix du régime forcé : constant ou sinusoïdal (amplitude et pulsation à choisir)
 - Interface :
 	- Caractéristiques de l'oscillateur :
-		- Facteur de qualité ?
-		- Pulsation propre ?
+		- Facteur de qualité Fait
+		- Pulsation propre Fait
 		- Type de régime transitoire et caractéristiques ?
 		- Pulsation de résonance
 	- Visualisation :
@@ -39,3 +39,14 @@ Ressources Physique
 -------------------
 - pulsation propre : ω = (k/m)^(1/2)
 - facteur de qualité : Q = (Ωr)/(Δω)
+- caractéristique oscillateur mécanique : 
+	- période : T = 2π(m/k)^(1/2)
+	- équation différentielle : mx''+αx'+kx=0
+- caratéristique oscillateur electrocinétique : 
+	- période : 2π(LC)^(1/2)
+	- équation différentielle : Lq''+Rx'+q/C=0
+
+
+
+
+
