@@ -12,8 +12,8 @@ TODO
 	- Choix du régime forcé : constant ou sinusoïdal (amplitude et pulsation à choisir)
 - Interface :
 	- Caractéristiques de l'oscillateur :
-		- Facteur de qualité ?
-		- Pulsation propre ?
+		- Facteur de qualité Fait
+		- Pulsation propre Fait
 		- Type de régime transitoire et caractéristiques ?
 		- Pulsation de résonance
 	- Visualisation :
