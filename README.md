@@ -41,7 +41,8 @@ Ressources Physique
 - facteur de qualité : Q = (Ωr)/(Δω)
 - caractéritique oscillateur mécanique : 
 	- période : T = 2π(m/k)^(1/2)
-	- équation différentielle du mouvement : 
+	- équation différentielle du mouvement : mx''+αx'+kx=0
+
 
 
 
