@@ -43,7 +43,7 @@ Ressources Physique
 	- période : T = 2π(m/k)^(1/2)
 	- équation différentielle : mx''+αx'+kx=0
 - caratéristique oscillateur electrocinétique : 
-	- période : idem
+	- période : 2π(LC)^(1/2)
 	- équation différentielle : Lq''+Rx'+q/C=0
 
 
