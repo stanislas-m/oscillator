@@ -17,8 +17,10 @@ let processMecaConfig () =
    ()
 ;;
 
-let processElecConfig () =
-   ()
+let processElecConfig r l =
+   print_endline r;
+	print_endline l;
+   flush stdout
 ;;
 
 (**
@@ -36,12 +38,22 @@ let startMecaConfig window =
 ;;
 
 let startElecConfig window =
-  let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur électrocinétique" ~height:360 ~width:600 ~parent:window ~modal:true ~destroy_with_parent:true () in
+  let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur électrocinétique" ~height:380 ~width:650 ~parent:window ~modal:true ~destroy_with_parent:true () in
+  let ownParamsFrame = GBin.frame ~label:"Paramètres propres" ~packing:dialogBox#vbox#add () in
+  	let frameContent = GPack.vbox ~spacing:10 ~packing:ownParamsFrame#add () in
+		let rBox = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
+			GMisc.label ~text:"R : " ~packing:rBox#add ();
+			let rInput = GEdit.entry ~packing:rBox#add () in
+			GMisc.label ~text:"Ω" ~packing:rBox#add ();
+		let lBox = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
+			GMisc.label ~text:"L : " ~packing:lBox#add ();
+			let lInput = GEdit.entry ~packing:lBox#add () in
+			GMisc.label ~text:"H" ~packing:lBox#add ();
   let buttonBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
   	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
     	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
      	let validateButton = GButton.button ~label:"Valider" ~packing:buttonBox#add () in
-	validateButton#connect#clicked ~callback:(fun () -> processElecConfig ());
+	validateButton#connect#clicked ~callback:(fun () -> processElecConfig rInput#text lInput#text);
   dialogBox#show ()
 ;;
 
