@@ -13,8 +13,10 @@ let _ = GMain.init ()
 * Traitement des données 
 *)
 
-let processMecaConfig () =
-   ()
+let processMecaConfig k l0 =
+   print_endline k;
+	print_endline l0;
+   flush stdout
 ;;
 
 let processElecConfig r l c e i =
@@ -32,11 +34,33 @@ let processElecConfig r l c e i =
 
 let startMecaConfig window =
   let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur mécanique" ~height:360 ~width:600 ~parent:window ~modal:true ~destroy_with_parent:true () in
+  let ownStartHBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
+   let ownParamsFrame = GBin.frame ~label:"Paramètres propres" ~packing:ownStartHBox#add () in
+	let frameContent = GPack.vbox ~spacing:10 ~packing:ownParamsFrame#add () in
+	let kBox = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
+		GMisc.label ~text:"k : " ~packing:kBox#add ();
+		let kInput = GEdit.entry ~packing:kBox#add () in
+		GMisc.label ~text: " " ~packing:kBox#add ();	
+	let l0Box = GPack.hbox~spacing:10 ~packing:frameContent#add () in
+		GMisc.label ~text:"l0 : " ~packing:l0Box#add ();
+		let l0Input = GEdit.entry ~packing:l0Box#add () in
+		GMisc.label ~text: "cm" ~packing:l0Box#add ();
+	let lambdaBox = GPack.hbox~spacing:10 ~packing:frameContent#add () in
+		GMisc.label ~text:"λ : " ~packing:lambdaBox#add ();
+		let lambdaInput = GEdit.entry ~packing:lambdaBox#add () in
+		GMisc.label ~text: " " ~packing:lambdaBox#add ();
+   	let initCondFrame = GBin.frame ~label:"Conditions initiales" ~packing:ownStartHBox#add () in
+   let regimeForce = GBin.frame ~label:"Type de régime forcé" ~packing:dialogBox#vbox#add () in
+	let regimeForceContent = GPack.hbox ~spacing:10 ~packing:regimeForce#add () in
+	  let regimeList = GList.liste ~packing:regimeForceContent#add () in
+		let constRegi = GList.list_item ~label:"Constant" ~packing:regimeList#add () in
+		constRegi#select ();
+		GList.list_item ~label:"Sinusoïdal" ~packing:regimeList#add ();
    let buttonBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
    	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
-   	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
+	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
 	let validateButton = GButton.button ~label:"Valider" ~packing:buttonBox#add () in
-	validateButton#connect#clicked ~callback:(fun () -> processMecaConfig ());
+	validateButton#connect#clicked ~callback:(fun () -> processMecaConfig kInput#text l0Input#text);
   dialogBox#show ()
 ;;
 
