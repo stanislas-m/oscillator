@@ -13,19 +13,35 @@ let _ = GMain.init ()
 * Traitement des données 
 *)
 
+let processMecaConfig () =
+   ()
+;;
+
+let processElecConfig () =
+   ()
+;;
+
 (**
 * Launchers 
 *)
 
 let startMecaConfig window =
   let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur mécanique" ~height:360 ~width:600 ~parent:window ~modal:true ~destroy_with_parent:true () in
-   let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:dialogBox#vbox#add () in
-   backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());  
+   let buttonBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
+   	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
+   	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
+	let validateButton = GButton.button ~label:"Valider" ~packing:buttonBox#add () in
+	validateButton#connect#clicked ~callback:(fun () -> processMecaConfig ());
   dialogBox#show ()
 ;;
 
 let startElecConfig window =
   let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur électrocinétique" ~height:360 ~width:600 ~parent:window ~modal:true ~destroy_with_parent:true () in
+  let buttonBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
+  	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
+    	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
+     	let validateButton = GButton.button ~label:"Valider" ~packing:buttonBox#add () in
+	validateButton#connect#clicked ~callback:(fun () -> processElecConfig ());
   dialogBox#show ()
 ;;
 
