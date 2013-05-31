@@ -66,13 +66,21 @@ let startElecConfig window =
 		   	let iInput = GEdit.entry ~width:20 ~packing:iBox#add () in
 		   	GMisc.label ~text:"A" ~packing:iBox#add ();
 		let startConditionsFrame = GBin.frame ~label:"Conditions initiales" ~packing:ownStartHbox#add () in
-	let forcedRegimeTypeFrame = GBin.frame ~label:"Type de régime forcé" ~packing:dialogBox#vbox#add () in
-		let forcedRegimeTypeFrameContent = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrame#add () in
-			let regimesList = GList.liste ~packing:forcedRegimeTypeFrameContent#add () in
-				let constRegime = GList.list_item ~label:"Constant" ~packing:regimesList#add () in
-				constRegime#select ();
-				GList.list_item ~label:"Sinusoïdal" ~packing:regimesList#add ();
-  let buttonBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
+	let forcedRegimeTypeFrame = GBin.frame ~label:"Régime forcé" ~packing:dialogBox#vbox#add () in
+		let forcedRegimeTypeFrameContent = GPack.vbox ~spacing:10 ~packing:forcedRegimeTypeFrame#add () in
+			let regimeTypeBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
+				GMisc.label ~markup:"<b>Type</b> : " ~packing:regimeTypeBox#add ();
+				let regimesList = GList.liste ~packing:regimeTypeBox#add () in
+					let constRegime = GList.list_item ~label:"Constant" ~packing:regimesList#add () in
+					constRegime#select ();
+					GList.list_item ~label:"Sinusoïdal" ~packing:regimesList#add ();
+			let amplBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
+				GMisc.label ~markup:"<b>Amplitude</b> : " ~packing:amplBox#add ();
+				let amplInput = GEdit.entry ~packing:amplBox#add () in
+			let pulseBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
+            GMisc.label ~markup:"<b>Pulsation</b> : " ~packing:pulseBox#add ();
+	let amplInput = GEdit.entry ~packing:pulseBox#add () in
+   let buttonBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
   	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
     	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
      	let validateButton = GButton.button ~label:"Valider" ~packing:buttonBox#add () in
