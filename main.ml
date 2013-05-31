@@ -18,13 +18,15 @@ let _ = GMain.init ()
 *)
 
 let startMecaConfig window =
-  let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur mécanique" ~height:360 ~width:600 ~parent:window ~destroy_with_parent:true () in  
+  let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur mécanique" ~height:360 ~width:600 ~parent:window ~modal:true ~destroy_with_parent:true () in
+   let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:dialogBox#vbox#add () in
+   backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());  
   dialogBox#show ()
 ;;
 
 let startElecConfig window =
-  print_endline "Affichage de la configuration pour l'oscillateur électrocinétique";
-  flush stdout
+  let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur électrocinétique" ~height:360 ~width:600 ~parent:window ~modal:true ~destroy_with_parent:true () in
+  dialogBox#show ()
 ;;
 
 (**
