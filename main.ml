@@ -94,18 +94,15 @@ let startElecConfig window =
 		let forcedRegimeTypeFrameContent = GPack.vbox ~spacing:10 ~packing:forcedRegimeTypeFrame#add () in
 			let regimeTypeBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
 				GMisc.label ~markup:"<b>Type</b> : " ~packing:regimeTypeBox#add ();
-				let regimesList = GList.liste ~packing:regimeTypeBox#add () in
-					let constRegime = GList.list_item ~label:"Constant" ~packing:regimesList#add () in
-					constRegime#select ();
-					GList.list_item ~label:"Sinusoïdal" ~packing:regimesList#add ();
+				let regimesList = GEdit.combo_box_text ~strings:["Constant";"Sinusoïdal"] ~active:0 ~packing:regimeTypeBox#add () in
 			let amplBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
 				GMisc.label ~markup:"<b>Amplitude</b> : " ~packing:amplBox#add ();
 				let amplInput = GEdit.entry ~packing:amplBox#add () in
 			let pulseBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
-            GMisc.label ~markup:"<b>Pulsation</b> : " ~packing:pulseBox#add ();
-	let amplInput = GEdit.entry ~packing:pulseBox#add () in
-   let buttonBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
-  	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
+            			GMisc.label ~markup:"<b>Pulsation</b> : " ~packing:pulseBox#add ();
+				let pulseInput = GEdit.entry ~packing:pulseBox#add () in
+   	let buttonBox = GPack.button_box `HORIZONTAL ~spacing:10 ~packing:dialogBox#vbox#add () in
+	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
     	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
      	let validateButton = GButton.button ~label:"Valider" ~packing:buttonBox#add () in
 	validateButton#connect#clicked ~callback:(fun () -> processElecConfig rInput#text lInput#text cInput#text eInput#text iInput#text);
@@ -136,23 +133,26 @@ let menu window vbox =
    let frame = GBin.frame ~height:400 ~label:"Oscillateurs disponibles" ~packing:vbox#add () in
       let frameContent = GPack.hbox ~spacing:10 ~packing:frame#add () in
          let menuMeca = GPack.vbox ~spacing:10 ~packing:frameContent#add () in
-            let buttonM = GButton.button
-	         ~label:"Mécanique"
-	         ~packing:menuMeca#add () in
-	         buttonM#connect#clicked ~callback:(fun () -> startMecaConfig window);
+		let buttonMBox = GPack.button_box `HORIZONTAL ~child_width:200 ~packing:menuMeca#add () in
+			let buttonM = GButton.button
+	         	~label:"Mécanique"
+	         	~packing:buttonMBox#add () in
+	         	buttonM#connect#clicked ~callback:(fun () -> startMecaConfig window);
             let imgMeca = GMisc.image ~height:320 ~packing:menuMeca#add () in
-            imgMeca#set_file "/usr/share/icons/gnome/48x48/categories/package_graphics.png";
+            imgMeca#set_file "./img/oscillator_meca.png";
          let menuElec = GPack.vbox ~spacing:10 ~packing:frameContent#add () in
-            let buttonE = GButton.button
+            let buttonEBox = GPack.button_box `HORIZONTAL ~child_width:200 ~packing:menuElec#add () in
+		let buttonE = GButton.button
 	         ~label:"Électrocinétique"
-	         ~packing:menuElec#add () in
+	         ~packing:buttonEBox#add () in
 	         buttonE#connect#clicked ~callback:(fun () -> startElecConfig window);
             let imgElec = GMisc.image ~height:320 ~packing:menuElec#add () in
-            imgElec#set_file "/usr/share/icons/gnome/48x48/categories/package_graphics.png";
-         let quitButton = GButton.button
-         ~label:"Quitter"
-         ~packing:vbox#add () in
-            quitButton#connect#clicked ~callback:GMain.quit         
+            imgElec#set_file "./img/oscillator_elec.png";
+	 let quitButtonBox = GPack.button_box `HORIZONTAL ~packing:vbox#add () in
+	 	let quitButton = GButton.button
+         	~label:"Quitter"
+         	~packing:quitButtonBox#add () in
+            	quitButton#connect#clicked ~callback:GMain.quit
 ;;
 
 (* Main *)
