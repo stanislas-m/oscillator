@@ -9,6 +9,20 @@
 (* Initialisation de GTK. *)
 let _ = GMain.init ()
 
+let quit window =
+	let dlg =
+		GWindow.message_dialog
+		~message:"Voulez-vous vraiment quitter le programme ?"
+		~parent:window
+		~destroy_with_parent:true
+		~message_type:`QUESTION
+		~buttons:GWindow.Buttons.yes_no () in
+			if dlg#run () = `NO then
+		  		dlg#destroy ()
+			else
+				GMain.quit ()
+;;
+
 (**
 * Traitement des données 
 *)
@@ -104,8 +118,10 @@ let startElecConfig window =
    	let buttonBox = GPack.button_box `HORIZONTAL ~spacing:10 ~packing:dialogBox#vbox#add () in
 	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
     	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
+		GMisc.image ~stock:`GO_BACK ~packing:backToMenuButton#set_image ();
      	let validateButton = GButton.button ~label:"Valider" ~packing:buttonBox#add () in
 	validateButton#connect#clicked ~callback:(fun () -> processElecConfig rInput#text lInput#text cInput#text eInput#text iInput#text);
+	GMisc.image ~stock:`OK ~packing:validateButton#set_image ();
   dialogBox#show ()
 ;;
 
@@ -152,7 +168,8 @@ let menu window vbox =
 	 	let quitButton = GButton.button
          	~label:"Quitter"
          	~packing:quitButtonBox#add () in
-            	quitButton#connect#clicked ~callback:GMain.quit
+            	quitButton#connect#clicked ~callback:(fun () -> quit window);
+					GMisc.image ~stock:`QUIT ~packing:quitButton#set_image ()
 ;;
 
 (* Main *)
