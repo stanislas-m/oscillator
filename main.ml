@@ -117,9 +117,11 @@ let start_meca_config window =
 let start_elec_config window =
   let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur électrocinétique" ~height:480 ~width:750 ~parent:window ~modal:true ~destroy_with_parent:true () in
   	let messageLabel = GMisc.label ~packing:dialogBox#vbox#add () in
-	let ownStartHbox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
-  	let ownParamsFrame = GBin.frame ~label:"Paramètres propres" ~packing:ownStartHbox#add () in
-  		let ownParamsFrameContent = GPack.vbox ~spacing:10 ~packing:ownParamsFrame#add () in
+	let ownInitHbox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
+	let illustration = GMisc.image ~width:200 ~packing:ownInitHbox#add () in
+		illustration#set_file "./img/oscillator_elec_config.png";
+  	let ownParamsFrame = GBin.frame ~label:"Paramètres propres" ~packing:ownInitHbox#add () in
+		let ownParamsFrameContent = GPack.vbox ~spacing:10 ~packing:ownParamsFrame#add () in
 			let rBox = GPack.hbox ~spacing:10 ~packing:ownParamsFrameContent#add () in
 				let rLabel = GMisc.label ~markup:"<b>R</b> : " ~packing:rBox#add () in
 				let rInput = GEdit.entry ~width:20 ~packing:rBox#add () in
@@ -140,7 +142,7 @@ let start_elec_config window =
 		   	let iLabel = GMisc.label ~markup:"<b>I</b> : " ~packing:iBox#add () in
 		   	let iInput = GEdit.entry ~width:20 ~packing:iBox#add () in
 		   	GMisc.label ~text:"A" ~packing:iBox#add ();
-		let initCondFrame = GBin.frame ~label:"Conditions initiales" ~packing:ownStartHbox#add () in
+		let initCondFrame = GBin.frame ~label:"Conditions initiales" ~packing:ownInitHbox#add () in
 	let forcedRegimeTypeFrame = GBin.frame ~label:"Régime forcé" ~packing:dialogBox#vbox#add () in
 		let forcedRegimeTypeFrameContent = GPack.vbox ~spacing:10 ~packing:forcedRegimeTypeFrame#add () in
 			let regimeTypeBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
