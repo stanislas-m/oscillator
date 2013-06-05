@@ -23,12 +23,72 @@ let quit window =
 				GMain.quit ()
 ;;
 
-(**
-* Affichage des résultats
-*)
+(* Affichage des résultats *)
 
-let display_meca_results window =
- ()
+	(* Gestion des graphiques *)
+let exposeEvent (drawingArea:GMisc.drawing_area) (backing:GDraw.pixmap) ev =
+  let area = GdkEvent.Expose.area ev in
+    let x = Gdk.Rectangle.x area in
+	   let y = Gdk.Rectangle.y area in
+		  let width = Gdk.Rectangle.width area in
+		    let height = Gdk.Rectangle.height area in
+			   let drawing =
+				    drawingArea#misc#realize ();
+					     new GDraw.drawable (drawingArea#misc#window)
+						    in
+							   drawing#put_pixmap ~x ~y ~xsrc:x ~ysrc:y ~width ~height backing#pixmap;
+								  false
+;;
+
+let draw_axes (backing:GDraw.pixmap) =
+	let height = (match backing#size with (x,y) -> y) in
+	let width = (match backing#size with (x,y) -> x) in
+	backing#set_foreground `WHITE;
+	backing#line 15 2 15 height;
+	backing#polygon ~filled:true [(8,10);(15,0);(22,10)];
+	backing#polygon ~filled:true [(width-10,(height/2)-7);(width,height/2);(width-10,(height/2)+7)];
+	backing#line 0 (height/2) (width-2) (height/2)
+;;
+
+let draw_graph contener pointsLists =
+	let height = 452 and width = 602 in
+	let drawingArea = GMisc.drawing_area ~width ~height ~packing:contener#add () in
+ 		let backing = GDraw.pixmap ~width ~height () in
+			let drawing = drawingArea#misc#realize (); new GDraw.drawable drawingArea#misc#window in
+   		drawingArea#misc#modify_bg [(`NORMAL,`WHITE)];
+			drawingArea#event#connect#expose ~callback:(fun event -> exposeEvent drawingArea backing event);
+			backing#set_foreground `BLACK;
+			backing#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
+			draw_axes backing;
+			drawing#put_pixmap ~x:0 ~y:0 backing#pixmap;
+	()
+;;
+
+let display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
+   let resultsWindow = GWindow.dialog ~title:"Résultats pour l'oscillateur mécanique demandé" ~height:560 ~width:900 ~modal:true ~destroy_with_parent:true ~parent:window () in
+      GMisc.label ~markup:"<span font_size='xx-large'><b>Résultats pour l'oscillateur mécanique demandé</b></span>" ~packing:resultsWindow#vbox#add ();
+		let resultsBox = GPack.hbox ~spacing:10 ~packing:resultsWindow#vbox#add () in
+         let graphFrame = GBin.frame ~label:"Graphe" ~packing:resultsBox#add () in
+            let graphFrameContent = GPack.vbox ~spacing:10 ~packing:graphFrame#add () in
+               draw_graph graphFrameContent [[(0,0);(1,1);(2,1);(3,2);(4,0)]];
+         let configResultsBox = GPack.vbox ~spacing:10 ~width:280 ~packing:resultsBox#add () in
+				let configFrame = GBin.frame ~label:"Configuration" ~packing:configResultsBox#add () in
+					let configFrameContent = GPack.vbox ~spacing:10 ~packing:configFrame#add () in
+						let configOwnInit = GPack.hbox ~spacing:10 ~packing:configFrameContent#add () in
+							let configOwn = GPack.vbox ~packing:configOwnInit#add () in
+								GMisc.label ~markup:("<b>k</b> : " ^ k) ~packing:configOwn#add ();
+								GMisc.label ~markup:("<b>m</b> : " ^ m ^ " g") ~packing:configOwn#add ();
+								GMisc.label ~markup:("<b>λ</b> : " ^ lambda) ~packing:configOwn#add ();
+							let configInit = GPack.vbox ~packing:configOwnInit#add () in
+								GMisc.label ~markup:("<b>x<sub>0</sub></b> : " ^ x0 ^ " cm") ~packing:configInit#add ();
+								GMisc.label ~markup:("<b>v<sub>0</sub></b> : " ^ v0 ^ " cm.s<sup>-1</sup>") ~packing:configInit#add ();
+				let resultsFrame = GBin.frame ~label:"Résultats" ~packing:configResultsBox#add () in
+            ();
+      let backButtonBox = GPack.button_box `HORIZONTAL ~packing:resultsWindow#vbox#add () in
+         let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:backButtonBox#add () in
+            backToMenuButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ());
+            GMisc.image ~stock:`GO_BACK ~packing:backToMenuButton#set_image ();
+   resultsWindow#show ()
 ;;
 
 let display_elec_results window =
@@ -158,64 +218,67 @@ let start_meca_config window =
 				(* Validation du formulaire *)
       		let validationResult = process_meca_config kInput#text mInput#text lambdaInput#text x0Input#text v0Input#text regimesListCBox#active pulseInput#text amplInput#text in
          		(* Affichage des éventuelles erreurs *)
-         		(if List.exists (fun x -> x = Invalid) (Array.to_list validationResult) then
+         		if List.exists (fun x -> x = Invalid) (Array.to_list validationResult) then
          		begin
             		messageLabel#set_text "<span foreground='red'>La configuration saisie présente des erreurs</span>";
-            		messageLabel#set_use_markup true
-         		end
-         		else
-            		messageLabel#set_text "");
-					(if Array.get validationResult 0 = Invalid then
-         		begin
-            		kLabel#set_text "<span foreground='red'><b>k</b> : </span>";
-            		kLabel#set_use_markup true
-         		end
-         		else
-            		kLabel#set_text "<b>k</b> : ";kLabel#set_use_markup true);
-         		(if Array.get validationResult 1 = Invalid then
-         		begin
-            		mLabel#set_text "<span foreground='red'><b>m</b> : </span>";
-            		mLabel#set_use_markup true
-        			end
-         		else
-            		mLabel#set_text "<b>m</b> : ";mLabel#set_use_markup true);
-         		(if Array.get validationResult 2 = Invalid then
-         		begin
-            		lambdaLabel#set_text "<span foreground='red'><b>λ</b> : </span>";
-            		lambdaLabel#set_use_markup true
-         		end
-         		else
-            		lambdaLabel#set_text "<b>λ</b> : ";lambdaLabel#set_use_markup true);
-         		(if Array.get validationResult 3 = Invalid then
-         		begin
-            		x0Label#set_text "<span foreground='red'><b>x<sub>0</sub></b> : </span>";
-            		x0Label#set_use_markup true
-         		end
-         		else
-            		x0Label#set_text "<b>x<sub>0</sub></b> : ";x0Label#set_use_markup true);
-         		(if Array.get validationResult 4 = Invalid then
-         		begin
-            		v0Label#set_text "<span foreground='red'><b>v<sub>0</sub></b> : </span>";
-            		v0Label#set_use_markup true
-         		end
-         		else
-            		v0Label#set_text "<b>v<sub>0</sub></b> : ";v0Label#set_use_markup true);
-         		(if Array.get validationResult 5 = Invalid then
-         		begin
-            		pulseLabel#set_text "<span foreground='red'><b>Pulsation</b> : </span>";
-            		pulseLabel#set_use_markup true
-         		end
-         		else
-            		pulseLabel#set_text "<b>Pulsation</b> : ";pulseLabel#set_use_markup true);
-         		(if Array.get validationResult 6 = Invalid then
-         		begin
-            		amplLabel#set_text "<span foreground='red'><b>Amplitude</b> : </span>";
-            		amplLabel#set_use_markup true
-         		end
-         		else
-            		amplLabel#set_text "<b>Amplitude</b> : ";amplLabel#set_use_markup true)
-				)
-			);
+            		messageLabel#set_use_markup true;
+						(if Array.get validationResult 0 = Invalid then
+         			begin
+            			kLabel#set_text "<span foreground='red'><b>k</b> : </span>";
+            			kLabel#set_use_markup true
+         			end
+         			else
+            			kLabel#set_text "<b>k</b> : ";kLabel#set_use_markup true);
+         			(if Array.get validationResult 1 = Invalid then
+         			begin
+            			mLabel#set_text "<span foreground='red'><b>m</b> : </span>";
+            			mLabel#set_use_markup true
+        				end
+         			else
+            			mLabel#set_text "<b>m</b> : ";mLabel#set_use_markup true);
+         			(if Array.get validationResult 2 = Invalid then
+         			begin
+            			lambdaLabel#set_text "<span foreground='red'><b>λ</b> : </span>";
+            			lambdaLabel#set_use_markup true
+         			end
+         			else
+            			lambdaLabel#set_text "<b>λ</b> : ";lambdaLabel#set_use_markup true);
+         			(if Array.get validationResult 3 = Invalid then
+         			begin
+            			x0Label#set_text "<span foreground='red'><b>x<sub>0</sub></b> : </span>";
+            			x0Label#set_use_markup true
+         			end
+         			else
+            			x0Label#set_text "<b>x<sub>0</sub></b> : ";x0Label#set_use_markup true);
+         			(if Array.get validationResult 4 = Invalid then
+         			begin
+            			v0Label#set_text "<span foreground='red'><b>v<sub>0</sub></b> : </span>";
+            			v0Label#set_use_markup true
+         			end
+         			else
+            			v0Label#set_text "<b>v<sub>0</sub></b> : ";v0Label#set_use_markup true);
+         			(if Array.get validationResult 5 = Invalid then
+         			begin
+            			pulseLabel#set_text "<span foreground='red'><b>Pulsation</b> : </span>";
+            			pulseLabel#set_use_markup true
+         			end
+         			else
+            			pulseLabel#set_text "<b>Pulsation</b> : ";pulseLabel#set_use_markup true);
+         			(if Array.get validationResult 6 = Invalid then
+         			begin
+            			amplLabel#set_text "<span foreground='red'><b>Amplitude</b> : </span>";
+            			amplLabel#set_use_markup true
+         			end
+         			else
+            			amplLabel#set_text "<b>Amplitude</b> : ";amplLabel#set_use_markup true)
+					end
+					else
+					begin
+						let k = kInput#text and m = mInput#text and lambda = lambdaInput#text and x0 = x0Input#text and v0 = v0Input#text and forcedMode = regimesListCBox#active and pulse = pulseInput#text and ampl = amplInput#text in
+                  dialogBox#destroy ();
+						display_meca_results window k m lambda x0 v0 forcedMode pulse ampl
+					end
+			));
 			GMisc.image ~stock:`OK ~packing:validateButton#set_image ();
   dialogBox#show ()
 ;;
@@ -342,7 +405,8 @@ let start_elec_config window =
 let window = GWindow.window 
   ~title:"Oscillateur mécanique et électrocinétique" 
   ~height:560 
-  ~width:900 ();;
+  ~width:900
+  ~resizable:false ();;
 
 (* Menu principal *)
 let menu window =
