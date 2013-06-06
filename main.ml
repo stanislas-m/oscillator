@@ -40,6 +40,16 @@ let exposeEvent (drawingArea:GMisc.drawing_area) (backing:GDraw.pixmap) ev =
 								  false
 ;;
 
+let rec draw_curves (backing:GDraw.pixmap) curves =
+	if List.length curves > 0 then
+	begin
+		backing#lines (List.hd curves);
+		draw_curves backing (List.tl curves)
+	end
+	else
+		backing		
+;;
+
 let draw_axes (backing:GDraw.pixmap) =
 	let height = (match backing#size with (x,y) -> y) in
 	let width = (match backing#size with (x,y) -> x) in
@@ -50,7 +60,7 @@ let draw_axes (backing:GDraw.pixmap) =
 	backing#line 0 (height/2) (width-2) (height/2)
 ;;
 
-let draw_graph contener pointsLists =
+let draw_graph contener curves =
 	let height = 452 and width = 602 in
 	let drawingArea = GMisc.drawing_area ~width ~height ~packing:contener#add () in
  		let backing = GDraw.pixmap ~width ~height () in
@@ -60,6 +70,7 @@ let draw_graph contener pointsLists =
 			backing#set_foreground `BLACK;
 			backing#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
 			draw_axes backing;
+			draw_curves backing curves;
 			drawing#put_pixmap ~x:0 ~y:0 backing#pixmap;
 	()
 ;;
