@@ -42,22 +42,33 @@ let exposeEvent (drawingArea:GMisc.drawing_area) (backing:GDraw.pixmap) ev =
 
 let get_xMax curves =
 	let compare x y =
-		let x1 = match x with (a,_) -> a and x2 = match y with (a,_) -> a in
-		if x1 < x2 then 1
-		else if x1 > x2 then -1
+	if x < y then 1
+		else if x > y then -1
 		else 0 in
-	10.
+   if curves <> [] then
+	   List.hd (List.fast_sort compare (List.map (fun curve -> match (List.split curve) with
+	(x,_) -> (List.hd (List.fast_sort compare x))) curves))
+	else
+	   0.
 ;;
 
 let get_yMax curves =
-	10.
+	let compare x y =
+	if x < y then 1
+		else if x > y then -1
+		else 0 in
+	if curves <> [] then
+	   List.hd (List.fast_sort compare (List.map abs_float (List.map (fun curve -> match (List.split curve) with
+	(_,y) -> (List.hd (List.fast_sort compare y))) curves)))
+	else
+	   0.
 ;;
 
 let rec draw_curves (backing:GDraw.pixmap) curves =
 	let height = (match backing#size with (x,y) -> y) in
 	let width = (match backing#size with (x,y) -> x) in
 	let xMax = get_xMax curves and yMax = get_yMax curves in
-	let xScale = (float_of_int width) /. xMax and yScale = 50. in
+	let xScale = ((float_of_int width) -. 7.) /. xMax and yScale = ((float_of_int height /. 2.) -. 7.) /. yMax in
 	if List.length curves > 0 then
 	begin
 		backing#lines (List.map (fun (x,y) -> ((int_of_float (x *. xScale +. 15.)), int_of_float (ceil ((float_of_int (height/2)) -. y *. yScale))))  (List.hd curves));
@@ -92,27 +103,30 @@ let draw_graph contener curves =
 	()
 ;;
 
-let rec get_points_from_function f dist max =
-	if max < 0. then
+let rec get_points_from_function f x currentZeros lambda =
+	if currentZeros >= 5 then
 		[]
 	else
-		(max, f max)::(get_points_from_function f dist (max -. dist))
+	   ((x,f x)::(get_points_from_function f (x +. (if lambda = 0. then 0.005 else 0.2)) (if f x < 0.01 && f x > -.0.01 then currentZeros + 1 else if lambda = 0. then currentZeros else 0) lambda))	   
 ;;
 
 let display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
    let resultsWindow = GWindow.dialog ~title:"Résultats pour l'oscillateur mécanique demandé" ~height:560 ~width:900 ~modal:true ~destroy_with_parent:true ~parent:window () in
       GMisc.label ~markup:"<span font_size='xx-large'><b>Résultats pour l'oscillateur mécanique demandé</b></span>" ~packing:resultsWindow#vbox#add ();
 		let w0 = sqrt((float_of_string k) /. (float_of_string m)) and xi = (float_of_string lambda) /. (2. *. sqrt((float_of_string k) *. (float_of_string m))) in
-		let x t = 
+		let x t =
 			if (float_of_string lambda) = 0. then
 				(float_of_string x0) *. (cos (w0 *. t)) +. ((float_of_string v0) /. w0) *. (sin (w0 *. t))
+			 else if xi < 1. then
+			   let w = w0 *. sqrt (1.-. xi**2.) in
+			   (exp (-.xi *. w0 *. t)) *. ((((float_of_string v0) +. xi *. w0 *. (float_of_string x0)) /. w) *. (sin (w *. t)) +. (float_of_string x0) *. (cos (w *. t))) 
 			 else
-				 0.
+				(exp (-.xi *. w0 *. t)) *. ((float_of_string x0) +. ((float_of_string v0) +. w0 *. (float_of_string x0)) *. t)
 		in
 		let resultsBox = GPack.hbox ~spacing:10 ~packing:resultsWindow#vbox#add () in
          let graphFrame = GBin.frame ~label:"Graphe" ~packing:resultsBox#add () in
             let graphFrameContent = GPack.vbox ~spacing:10 ~packing:graphFrame#add () in
-               draw_graph graphFrameContent [(get_points_from_function x 0.5 20.);(get_points_from_function cos 0.5 20.)];
+               draw_graph graphFrameContent [(get_points_from_function x 0. 0 (float_of_string lambda))];
          let configResultsBox = GPack.vbox ~spacing:10 ~width:280 ~packing:resultsBox#add () in
 				let configFrame = GBin.frame ~label:"Configuration" ~packing:configResultsBox#add () in
 					let configFrameContent = GPack.vbox ~spacing:10 ~packing:configFrame#add () in
