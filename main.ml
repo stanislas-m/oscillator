@@ -40,10 +40,23 @@ let exposeEvent (drawingArea:GMisc.drawing_area) (backing:GDraw.pixmap) ev =
 								  false
 ;;
 
+let get_xMax curves =
+	let compare x y =
+		let x1 = match x with (a,_) -> a and x2 = match y with (a,_) -> a in
+		if x1 < x2 then 1
+		else if x1 > x2 then -1
+		else 0 in
+	10.
+;;
+
+let get_yMax curves =
+	10.
+;;
+
 let rec draw_curves (backing:GDraw.pixmap) curves =
 	let height = (match backing#size with (x,y) -> y) in
 	let width = (match backing#size with (x,y) -> x) in
-	let xMax = 20. in
+	let xMax = get_xMax curves and yMax = get_yMax curves in
 	let xScale = (float_of_int width) /. xMax and yScale = 50. in
 	if List.length curves > 0 then
 	begin
@@ -99,7 +112,7 @@ let display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
 		let resultsBox = GPack.hbox ~spacing:10 ~packing:resultsWindow#vbox#add () in
          let graphFrame = GBin.frame ~label:"Graphe" ~packing:resultsBox#add () in
             let graphFrameContent = GPack.vbox ~spacing:10 ~packing:graphFrame#add () in
-               draw_graph graphFrameContent [(get_points_from_function x 0.5 20.)];
+               draw_graph graphFrameContent [(get_points_from_function x 0.5 20.);(get_points_from_function cos 0.5 20.)];
          let configResultsBox = GPack.vbox ~spacing:10 ~width:280 ~packing:resultsBox#add () in
 				let configFrame = GBin.frame ~label:"Configuration" ~packing:configResultsBox#add () in
 					let configFrameContent = GPack.vbox ~spacing:10 ~packing:configFrame#add () in
