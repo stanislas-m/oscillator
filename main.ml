@@ -41,9 +41,19 @@ let exposeEvent (drawingArea:GMisc.drawing_area) (backing:GDraw.pixmap) ev =
 ;;
 
 let rec draw_curves (backing:GDraw.pixmap) curves =
+<<<<<<< HEAD
+	let height = (match backing#size with (x,y) -> y) in
+	let width = (match backing#size with (x,y) -> x) in
+	let xMax = 20. and yMax = 10. in
+	let xScale = (float_of_int width) /. xMax and yScale = (float_of_int height) /. yMax in
+	if List.length curves > 0 then
+	begin
+		backing#lines (List.map (fun (x,y) -> ((int_of_float (x *. xScale +. 15.)), int_of_float (ceil ((float_of_int (height/2)) -. y *. yScale))))  (List.hd curves));
+=======
 	if List.length curves > 0 then
 	begin
 		backing#lines (List.hd curves);
+>>>>>>> e79a7079d833a406cc7e8eb058f7ab3a94502d9b
 		draw_curves backing (List.tl curves)
 	end
 	else
@@ -75,6 +85,29 @@ let draw_graph contener curves =
 	()
 ;;
 
+<<<<<<< HEAD
+let rec get_points_from_function f dist max =
+	if max < 0. then
+		[]
+	else
+		(max, f max)::(get_points_from_function f dist (max -. dist))
+;;
+
+let display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
+   let resultsWindow = GWindow.dialog ~title:"Résultats pour l'oscillateur mécanique demandé" ~height:560 ~width:900 ~modal:true ~destroy_with_parent:true ~parent:window () in
+      GMisc.label ~markup:"<span font_size='xx-large'><b>Résultats pour l'oscillateur mécanique demandé</b></span>" ~packing:resultsWindow#vbox#add ();
+		let w0 = sqrt((float_of_string k) /. (float_of_string m)) and xi = (float_of_string lambda) /. (2. *. sqrt((float_of_string k) *. (float_of_string m))) in
+		let x t = 
+			if (float_of_string lambda) = 0. then
+				(float_of_string x0) *. (cos (w0 *. t)) +. ((float_of_string v0) /. w0) *. (sin (w0 *. t))
+			 else
+				 0.
+		in
+		let resultsBox = GPack.hbox ~spacing:10 ~packing:resultsWindow#vbox#add () in
+         let graphFrame = GBin.frame ~label:"Graphe" ~packing:resultsBox#add () in
+            let graphFrameContent = GPack.vbox ~spacing:10 ~packing:graphFrame#add () in
+               draw_graph graphFrameContent [(get_points_from_function x 0.5 20.)];
+=======
 let display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
    let resultsWindow = GWindow.dialog ~title:"Résultats pour l'oscillateur mécanique demandé" ~height:560 ~width:900 ~modal:true ~destroy_with_parent:true ~parent:window () in
       GMisc.label ~markup:"<span font_size='xx-large'><b>Résultats pour l'oscillateur mécanique demandé</b></span>" ~packing:resultsWindow#vbox#add ();
@@ -82,6 +115,7 @@ let display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
          let graphFrame = GBin.frame ~label:"Graphe" ~packing:resultsBox#add () in
             let graphFrameContent = GPack.vbox ~spacing:10 ~packing:graphFrame#add () in
                draw_graph graphFrameContent [[(0,0);(1,1);(2,1);(3,2);(4,0)]];
+>>>>>>> e79a7079d833a406cc7e8eb058f7ab3a94502d9b
          let configResultsBox = GPack.vbox ~spacing:10 ~width:280 ~packing:resultsBox#add () in
 				let configFrame = GBin.frame ~label:"Configuration" ~packing:configResultsBox#add () in
 					let configFrameContent = GPack.vbox ~spacing:10 ~packing:configFrame#add () in
@@ -114,30 +148,30 @@ type validField = Valid | Invalid;;
 
 let process_meca_config k m lambda x0 v0 forcedMode pulse amp =
    [|(try
-      if int_of_string k < 0 then failwith "int_of_string" else Valid
-   with Failure "int_of_string" -> Invalid);
+      if float_of_string k < 0. then failwith "float_of_string" else Valid
+   with Failure "float_of_string" -> Invalid);
    (try
-      if int_of_string m < 0 then failwith "int_of_string" else Valid
-   with Failure "int_of_string" -> Invalid);
+      if float_of_string m < 0. then failwith "float_of_string" else Valid
+   with Failure "float_of_string" -> Invalid);
    (try
-      if int_of_string lambda < 0 then failwith "int_of_string" else Valid
-   with Failure "int_of_string" -> Invalid);
+      if float_of_string lambda < 0. then failwith "float_of_string" else Valid
+   with Failure "float_of_string" -> Invalid);
    (try
-      if int_of_string x0 < 0 then failwith "int_of_string" else Valid
-   with Failure "int_of_string" -> Invalid);
+      if float_of_string x0 < 0. then failwith "float_of_string" else Valid
+   with Failure "float_of_string" -> Invalid);
    (try
-      if int_of_string v0 < 0 then failwith "int_of_string" else Valid
-   with Failure "int_of_string" -> Invalid);
+      if float_of_string v0 < 0. then failwith "float_of_string" else Valid
+   with Failure "float_of_string" -> Invalid);
    (if forcedMode = 1 then
       (try
-         if int_of_string pulse < 0 then failwith "int_of_string" else Valid
-      with Failure "int_of_string" -> Invalid)
+         if float_of_string pulse < 0. then failwith "float_of_string" else Valid
+      with Failure "float_of_string" -> Invalid)
    else
       Valid);
    (if forcedMode = 1 then
       (try
-         if int_of_string amp < 0 then failwith "int_of_string" else Valid
-      with Failure "int_of_string" -> Invalid)
+         if float_of_string amp < 0. then failwith "float_of_string" else Valid
+      with Failure "float_of_string" -> Invalid)
    else
       Valid)
    |]
