@@ -278,7 +278,7 @@ let rec display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
 	            GMisc.label ~markup:("<b>Pulsation de résonance</b> : " ^ (if ((float_of_string lambda) < w0 /. (sqrt 2.)) then string_of_float(truncate (sqrt ((w0 ** 2.) -. (2. *. ((float_of_string lambda) ** 2.)))) 3) else "indéfinie")) ~packing:resultsFrameContent#add ();
       let backButtonBox = GPack.button_box `HORIZONTAL ~packing:resultsWindow#vbox#add () in
          let backToConfigButton = GButton.button ~label:"Changer la configuration" ~packing:backButtonBox#add () in
-            backToConfigButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ();start_meca_config window);
+            backToConfigButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ();start_meca_config ~k:k ~m:m ~lambda:lambda ~x0:x0 ~v0:v0 window);
             GMisc.image ~stock:`EDIT ~packing:backToConfigButton#set_image ();
          let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:backButtonBox#add () in
             backToMenuButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ());
@@ -321,7 +321,7 @@ and display_elec_results window r l c q0 i0 forcedMode pulse amp =
 	            GMisc.label ~markup:("<b>Pulsation de résonance</b> : " ^ (if ((float_of_string r) < w0 /. (sqrt 2.)) then string_of_float(truncate (sqrt ((w0 ** 2.) -. (2. *. ((float_of_string r) ** 2.)))) 3) else "indéfinie")) ~packing:resultsFrameContent#add ();
       let backButtonBox = GPack.button_box `HORIZONTAL ~packing:resultsWindow#vbox#add () in
          let backToConfigButton = GButton.button ~label:"Changer la configuration" ~packing:backButtonBox#add () in
-            backToConfigButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ();start_elec_config window);
+            backToConfigButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ();start_elec_config ~r:r ~l:l ~c:c ~q0:q0 ~i0:i0 window);
             GMisc.image ~stock:`EDIT ~packing:backToConfigButton#set_image ();
          let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:backButtonBox#add () in
             backToMenuButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ());
@@ -332,7 +332,7 @@ and display_elec_results window r l c q0 i0 forcedMode pulse amp =
 *                          Fenêtres de configuration 
 ******************************************************************************)
 
-and start_meca_config window =
+and start_meca_config ?k:(k=("")) ?m:(m="") ?lambda:(lambda="") ?x0:(x0="") ?v0:(v0="") window =
   let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur mécanique" ~height:410 ~width:750 ~parent:window ~modal:true ~destroy_with_parent:true () in
 	let messageLabel = GMisc.label ~packing:dialogBox#vbox#add () in
 	let ownInitHBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
@@ -340,25 +340,25 @@ and start_meca_config window =
 			let frameContent = GPack.vbox ~spacing:10 ~packing:ownParamsFrame#add () in
 				let kBox = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
 					let kLabel = GMisc.label ~markup:"<b>k</b> : " ~packing:kBox#add () in
-					let kInput = GEdit.entry ~width:20 ~packing:kBox#add () in
+					let kInput = GEdit.entry ~text:k ~width:20 ~packing:kBox#add () in
 					GMisc.label ~text: " " ~packing:kBox#add ();	
 				let mBox = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
 					let mLabel = GMisc.label ~markup:"<b>m</b> : " ~packing:mBox#add () in
-					let mInput = GEdit.entry ~width:20 ~packing:mBox#add () in
+					let mInput = GEdit.entry ~text:m ~width:20 ~packing:mBox#add () in
 					GMisc.label ~text: "g" ~packing:mBox#add ();
 				let lambdaBox = GPack.hbox~spacing:10 ~packing:frameContent#add () in
 					let lambdaLabel = GMisc.label ~markup:"<b>λ</b> : " ~packing:lambdaBox#add () in
-					let lambdaInput = GEdit.entry ~width:20 ~packing:lambdaBox#add () in
+					let lambdaInput = GEdit.entry ~text:lambda ~width:20 ~packing:lambdaBox#add () in
 					GMisc.label ~text: " " ~packing:lambdaBox#add ();
    		let initCondFrame = GBin.frame ~label:"Conditions initiales" ~packing:ownInitHBox#add () in
 				let frameContent = GPack.vbox ~spacing:10 ~packing:initCondFrame#add () in
 					let x0Box = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
 						let x0Label = GMisc.label ~markup:"<b>x<sub>0</sub></b>" ~packing:x0Box#add () in
-						let x0Input = GEdit.entry ~width:20 ~packing:x0Box#add () in
+						let x0Input = GEdit.entry ~text:x0 ~width:20 ~packing:x0Box#add () in
 						GMisc.label ~text:"cm" ~packing:x0Box#add ();
 					let v0Box = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
            			let v0Label = GMisc.label ~markup:"<b>v<sub>0</sub></b>" ~packing:v0Box#add () in
-            		let v0Input = GEdit.entry ~width:20 ~packing:v0Box#add () in
+            		let v0Input = GEdit.entry ~text:v0 ~width:20 ~packing:v0Box#add () in
             		GMisc.label ~markup:"cm.s<sup>-1</sup>" ~packing:v0Box#add ();	
  	let forcedRegimeTypeFrame = GBin.frame ~label:"Régime forcé" ~packing:dialogBox#vbox#add () in
      	let forcedRegimeTypeFrameContent = GPack.vbox ~spacing:10 ~packing:forcedRegimeTypeFrame#add () in
@@ -447,7 +447,7 @@ and start_meca_config window =
 			GMisc.image ~stock:`OK ~packing:validateButton#set_image ();
   dialogBox#show ()
 
-and start_elec_config window =
+and start_elec_config ?r:(r=("")) ?l:(l="") ?c:(c="") ?q0:(q0="") ?i0:(i0="") window =
   let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur électrocinétique" ~height:480 ~width:750 ~parent:window ~modal:true ~destroy_with_parent:true () in
   	let messageLabel = GMisc.label ~packing:dialogBox#vbox#add () in
 	let ownInitHbox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
@@ -457,25 +457,25 @@ and start_elec_config window =
 		let ownParamsFrameContent = GPack.vbox ~spacing:10 ~packing:ownParamsFrame#add () in
 			let rBox = GPack.hbox ~spacing:10 ~packing:ownParamsFrameContent#add () in
 				let rLabel = GMisc.label ~markup:"<b>R</b> : " ~packing:rBox#add () in
-				let rInput = GEdit.entry ~width:20 ~packing:rBox#add () in
+				let rInput = GEdit.entry ~text:r ~width:20 ~packing:rBox#add () in
 				GMisc.label ~text:"Ω" ~packing:rBox#add ();
 			let lBox = GPack.hbox ~spacing:10 ~packing:ownParamsFrameContent#add () in
 				let lLabel = GMisc.label ~markup:"<b>L</b> : " ~packing:lBox#add () in
-				let lInput = GEdit.entry ~width:20 ~packing:lBox#add () in
+				let lInput = GEdit.entry ~text:l ~width:20 ~packing:lBox#add () in
 				GMisc.label ~text:"H" ~packing:lBox#add ();
 			let cBox = GPack.hbox ~spacing:10 ~packing:ownParamsFrameContent#add () in
 				let cLabel = GMisc.label ~markup:"<b>C</b> : " ~packing:cBox#add () in
-				let cInput = GEdit.entry ~width:20 ~packing:cBox#add () in
+				let cInput = GEdit.entry ~text:c ~width:20 ~packing:cBox#add () in
 				GMisc.label ~text:"F" ~packing:cBox#add ();
 	   let initCondFrame = GBin.frame ~label:"Conditions initiales" ~packing:ownInitHbox#add () in
 				let frameContent = GPack.vbox ~spacing:10 ~packing:initCondFrame#add () in
 					let q0Box = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
 						let q0Label = GMisc.label ~markup:"<b>q<sub>0</sub></b>" ~packing:q0Box#add () in
-						let q0Input = GEdit.entry ~width:20 ~packing:q0Box#add () in
+						let q0Input = GEdit.entry ~text:q0 ~width:20 ~packing:q0Box#add () in
 						GMisc.label ~text:"C" ~packing:q0Box#add ();
 					let i0Box = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
            			let i0Label = GMisc.label ~markup:"<b>I<sub>0</sub></b>" ~packing:i0Box#add () in
-            		let i0Input = GEdit.entry ~width:20 ~packing:i0Box#add () in
+            		let i0Input = GEdit.entry ~text:i0 ~width:20 ~packing:i0Box#add () in
             		GMisc.label ~markup:"A" ~packing:i0Box#add ();	
 	let forcedRegimeTypeFrame = GBin.frame ~label:"Régime forcé" ~packing:dialogBox#vbox#add () in
 		let forcedRegimeTypeFrameContent = GPack.vbox ~spacing:10 ~packing:forcedRegimeTypeFrame#add () in
