@@ -37,13 +37,15 @@ type validField = Valid | Invalid;;
 * Traitement du formulaire de configuration d'un oscillateur mécanique
 * @param k string
 * @param m string
+* @param lambda string
 * @param x0 string
 * @param v0 string
 * @param forcedMode int
+* @param h string
 * @param pulse string
 * @param amp string
 *)
-let process_meca_config k m lambda x0 v0 forcedMode pulse amp =
+let process_meca_config k m lambda x0 v0 forcedMode h pulse amp =
    [|(try
       if float_of_string k < 0. then failwith "float_of_string" else Valid
    with Failure "float_of_string" -> Invalid);
@@ -59,6 +61,12 @@ let process_meca_config k m lambda x0 v0 forcedMode pulse amp =
    (try
       if float_of_string v0 < 0. then failwith "float_of_string" else Valid
    with Failure "float_of_string" -> Invalid);
+   (if forcedMode = 0 then
+      (try
+         if float_of_string h < 0. then failwith "float_of_string" else Valid
+      with Failure "float_of_string" -> Invalid)
+   else
+      Valid);
    (if forcedMode = 1 then
       (try
          if float_of_string pulse < 0. then failwith "float_of_string" else Valid
@@ -74,7 +82,19 @@ let process_meca_config k m lambda x0 v0 forcedMode pulse amp =
    |]
 ;;
 
-let process_elec_config r l c q0 i0 forcedMode pulse amp =
+(**
+* Traitement du formulaire de configuration d'un oscillateur électrocinétique
+* @param r string
+* @param l string
+* @param c string
+* @param q0 string
+* @param i0 string
+* @param forcedMode int
+* @param e string
+* @param pulse string
+* @param amp string
+*)
+let process_elec_config r l c q0 i0 forcedMode e pulse amp =
    [|(try
 		if float_of_string r < 0. then failwith "float_of_string" else Valid
 	with Failure "float_of_string" -> Invalid); 
@@ -90,6 +110,12 @@ let process_elec_config r l c q0 i0 forcedMode pulse amp =
 	(try
 		if float_of_string i0 < 0. then failwith "float_of_string" else Valid
 	with Failure "float_of_string" -> Invalid);
+	(if forcedMode = 0 then
+      (try
+         if float_of_string e < 0. then failwith "float_of_string" else Valid
+      with Failure "float_of_string" -> Invalid)
+   else
+      Valid);
 	(if forcedMode = 1 then
 		(try
          if float_of_string pulse < 0. then failwith "float_of_string" else Valid
@@ -183,6 +209,13 @@ let rec draw_curves (backing:GDraw.pixmap) curves xScale yScale =
 		backing		
 ;;
 
+(**
+* Dessine les graduations sur l'axe des abscisses
+* @param backing GDraw.pixmap La zone de dessin en mémoire
+* @param x int
+* @param height int
+* @param width int
+*)
 let rec draw_axes_segments_x (backing:GDraw.pixmap) x height width  =
    if ((x - 15) mod 50 = 0) then
       backing#line x ((height / 2) - 3) x ((height / 2) + 3)
@@ -194,6 +227,11 @@ let rec draw_axes_segments_x (backing:GDraw.pixmap) x height width  =
       backing
 ;;
 
+(**
+* Dessine les axes du repère
+* @param backing GDraw.pixmap La zone de dessin en mémoire
+* @param yScale float
+*)
 let draw_axes (backing:GDraw.pixmap) yScale =
 	let height = snd backing#size in
 	let width = fst backing#size in
@@ -202,9 +240,14 @@ let draw_axes (backing:GDraw.pixmap) yScale =
 	backing#polygon ~filled:true [(8,10);(15,0);(22,10)];
 	backing#polygon ~filled:true [(width-10,(height/2)-7);(width,height/2);(width-10,(height/2)+7)];
 	backing#line 0 (height/2) (width-2) (height/2);
-	draw_axes_segments_x backing 15 height width;
+	draw_axes_segments_x backing 15 height width
 ;;
 
+(**
+* Dessine les axes du repère
+* @param contener GPack.box
+* @param curves (float * float) list list La liste de courbes
+*)
 let draw_graph contener curves =
    let xMax = get_xMax curves and yMax = get_yMax curves in
 	let height = 452 and width = (if ((int_of_float xMax) * 10 < 602) then 602 else (int_of_float xMax) * 10) in
@@ -228,38 +271,48 @@ let draw_graph contener curves =
 * Génère une liste de points à partir d'une fonction donnée
 * @param f (float -> float) La fonction génératrice
 * @param x float La valeur en abscisse actuelle
-* @param currentZeros int Le nombre de fois consécutives où l'on est entré dans l'intervalle -0,01 < y < 0,01
+* @param currentZeros int Le nombre de fois consécutives où l'on est entré dans l'intervalle de convergence
 * @param lambda float Le coefficient d'amortissement
 *)
-let rec get_points_from_function f x currentZeros lambda =
-	if currentZeros >= 5 then
-		[]
+let rec get_points_from_function ?pile:(pile=[]) ?ySat:(ySat=0.) f x currentZeros lambda =
+	if (((lambda = 0. && List.length pile > 100) || List.length pile > 300) && currentZeros >= 5) then
+		pile
 	else
-	   ((x,f x)::(get_points_from_function f (x +. (if lambda = 0. then 0.005 else 0.2)) (if f x < 0.01 && f x > -.0.01 then currentZeros + 1 else if lambda = 0. then currentZeros else 0) lambda))	   
+	   (get_points_from_function ~pile:((x,f x)::pile) ~ySat:(ySat) f (x +. (if lambda = 0. then 0.005 else 0.2)) (if f x < (0.01 +. ySat) && f x > (ySat -. 0.01) then currentZeros + 1 else if lambda = 0. then currentZeros else 0) lambda)	   
 ;;
 
+(**
+* Tronque un nombre flottant à la nième décimale
+* @param x float Nombre à tronquer 
+* @param n int Position de la décimale
+*)
 let truncate x n =
    (float_of_int (int_of_float (x *. 10. ** (float_of_int n)))) /. (10. ** (float_of_int n)) 
 ;;
 
-let rec display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
+let rec display_meca_results window k m lambda x0 v0 forcedMode h pulse ampl =
    let resultsWindow = GWindow.dialog ~title:"Résultats pour l'oscillateur mécanique demandé" ~height:560 ~width:900 ~modal:true ~destroy_with_parent:true ~parent:window () in
       GMisc.label ~markup:"<span font_size='xx-large'><b>Résultats pour l'oscillateur mécanique demandé</b></span>" ~packing:resultsWindow#vbox#add ();
 		let w0 = sqrt((float_of_string k) /. (float_of_string m)) and xi = (float_of_string lambda) /. (2. *. sqrt((float_of_string k) *. (float_of_string m))) in
 		let x t =
-			if (float_of_string lambda) = 0. then
-				(float_of_string x0) *. (cos (w0 *. t)) +. ((float_of_string v0) /. w0) *. (sin (w0 *. t))
-			 else if xi < 1. then
-			   let w = w0 *. sqrt (1.-. xi**2.) in
-			   (exp (-.xi *. w0 *. t)) *. ((((float_of_string v0) +. xi *. w0 *. (float_of_string x0)) /. w) *. (sin (w *. t)) +. (float_of_string x0) *. (cos (w *. t))) 
-			 else
-				(exp (-.xi *. w0 *. t)) *. ((float_of_string x0) +. ((float_of_string v0) +. w0 *. (float_of_string x0)) *. t)
+		   if forcedMode = 0 then
+		   begin
+			   if (float_of_string lambda) = 0. then
+				   (float_of_string x0) *. (cos (w0 *. t)) +. ((float_of_string v0) /. w0) *. (sin (w0 *. t)) +. ((float_of_string h) /. (w0**2.)) 
+			    else if xi < 1. then
+			      let w = w0 *. sqrt (1.-. xi**2.) in
+			      (exp (-.xi *. w0 *. t)) *. ((((float_of_string v0) +. xi *. w0 *. (float_of_string x0)) /. w) *. (sin (w *. t)) +. (float_of_string x0) *. (cos (w *. t))) +. ((float_of_string h) /. (w0**2.))
+			    else
+				   (exp (-.xi *. w0 *. t)) *. ((float_of_string x0) +. ((float_of_string v0) +. w0 *. (float_of_string x0)) *. t)  +. ((float_of_string h) /. (w0**2.))
+		   end
+		   else
+		      0. (* Non-implémenté *)
 		in
 		let resultsBox = GPack.hbox ~spacing:10 ~packing:resultsWindow#vbox#add () in
          let graphFrame = GBin.frame ~label:"Graphe" ~packing:resultsBox#add () in
             let graphFrameScroll = GBin.scrolled_window ~vpolicy:`NEVER ~hpolicy:`AUTOMATIC ~height:452 ~width:602 ~packing:graphFrame#add () in
                let graphFrameContent = GBin.viewport ~packing:graphFrameScroll#add () in
-               draw_graph graphFrameContent [(get_points_from_function x 0. 0 (float_of_string lambda))];
+               draw_graph graphFrameContent [(get_points_from_function ~ySat:((float_of_string h) /. (w0**2.)) x 0. 0 (float_of_string lambda))];
          let configResultsBox = GPack.vbox ~spacing:10 ~width:280 ~packing:resultsBox#add () in
 				let configFrame = GBin.frame ~label:"Configuration" ~packing:configResultsBox#add () in
 					let configFrameContent = GPack.vbox ~spacing:10 ~packing:configFrame#add () in
@@ -278,31 +331,36 @@ let rec display_meca_results window k m lambda x0 v0 forcedMode pulse amp =
 	            GMisc.label ~markup:("<b>Pulsation de résonance</b> : " ^ (if ((float_of_string lambda) < w0 /. (sqrt 2.)) then string_of_float(truncate (sqrt ((w0 ** 2.) -. (2. *. ((float_of_string lambda) ** 2.)))) 3) else "indéfinie")) ~packing:resultsFrameContent#add ();
       let backButtonBox = GPack.button_box `HORIZONTAL ~packing:resultsWindow#vbox#add () in
          let backToConfigButton = GButton.button ~label:"Changer la configuration" ~packing:backButtonBox#add () in
-            backToConfigButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ();start_meca_config ~k:k ~m:m ~lambda:lambda ~x0:x0 ~v0:v0 window);
+            backToConfigButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ();start_meca_config ~k:k ~m:m ~lambda:lambda ~x0:x0 ~v0:v0 ~forcedMode:forcedMode ~h:h ~ampl:ampl ~pulse:pulse window);
             GMisc.image ~stock:`EDIT ~packing:backToConfigButton#set_image ();
          let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:backButtonBox#add () in
             backToMenuButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ());
             GMisc.image ~stock:`GO_BACK ~packing:backToMenuButton#set_image ();
    resultsWindow#show ()
 
-and display_elec_results window r l c q0 i0 forcedMode pulse amp =
+and display_elec_results window r l c q0 i0 forcedMode e pulse ampl =
  let resultsWindow = GWindow.dialog ~title:"Résultats pour l'oscillateur électrocinétique demandé" ~height:560 ~width:900 ~modal:true ~destroy_with_parent:true ~parent:window () in
       GMisc.label ~markup:"<span font_size='xx-large'><b>Résultats pour l'oscillateur électrocinétique demandé</b></span>" ~packing:resultsWindow#vbox#add ();
 		let w0 = sqrt((1. /. float_of_string c) /. (float_of_string l)) and xi = (float_of_string r) /. (2. *. sqrt((1. /. (float_of_string c)) *. (float_of_string l))) in
 		let q t =
+		   if forcedMode = 0 then
+		   begin
 			if (float_of_string r) = 0. then
-				(float_of_string q0) *. (cos (w0 *. t)) +. ((float_of_string i0) /. w0) *. (sin (w0 *. t))
+				(float_of_string q0) *. (cos (w0 *. t)) +. ((float_of_string i0) /. w0) *. (sin (w0 *. t)) +. ((float_of_string e) /. (w0**2.))
 			 else if xi < 1. then
 			   let w = w0 *. sqrt (1.-. xi**2.) in
-			   (exp (-.xi *. w0 *. t)) *. ((((float_of_string i0) +. xi *. w0 *. (float_of_string q0)) /. w) *. (sin (w *. t)) +. (float_of_string q0) *. (cos (w *. t))) 
+			   (exp (-.xi *. w0 *. t)) *. ((((float_of_string i0) +. xi *. w0 *. (float_of_string q0)) /. w) *. (sin (w *. t)) +. (float_of_string q0) *. (cos (w *. t))) +. ((float_of_string e) /. (w0**2.))
 			 else
-				(exp (-.xi *. w0 *. t)) *. ((float_of_string q0) +. ((float_of_string i0) +. w0 *. (float_of_string q0)) *. t)
+				(exp (-.xi *. w0 *. t)) *. ((float_of_string q0) +. ((float_of_string i0) +. w0 *. (float_of_string q0)) *. t) +. ((float_of_string e) /. (w0**2.))
+			end
+		   else
+		      0. (* Non-implémenté *)
 		in
 		let resultsBox = GPack.hbox ~spacing:10 ~packing:resultsWindow#vbox#add () in
          let graphFrame = GBin.frame ~label:"Graphe" ~packing:resultsBox#add () in
             let graphFrameScroll = GBin.scrolled_window ~vpolicy:`NEVER ~hpolicy:`AUTOMATIC ~height:452 ~width:602 ~packing:graphFrame#add () in
                let graphFrameContent = GBin.viewport ~packing:graphFrameScroll#add () in
-               draw_graph graphFrameContent [(get_points_from_function q 0. 0 (float_of_string r))];
+               draw_graph graphFrameContent [(get_points_from_function ~ySat:((float_of_string e) /. (w0**2.)) q 0. 0 (float_of_string r))];
          let configResultsBox = GPack.vbox ~spacing:10 ~width:280 ~packing:resultsBox#add () in
 				let configFrame = GBin.frame ~label:"Configuration" ~packing:configResultsBox#add () in
 					let configFrameContent = GPack.vbox ~spacing:10 ~packing:configFrame#add () in
@@ -321,7 +379,7 @@ and display_elec_results window r l c q0 i0 forcedMode pulse amp =
 	            GMisc.label ~markup:("<b>Pulsation de résonance</b> : " ^ (if ((float_of_string r) < w0 /. (sqrt 2.)) then string_of_float(truncate (sqrt ((w0 ** 2.) -. (2. *. ((float_of_string r) ** 2.)))) 3) else "indéfinie")) ~packing:resultsFrameContent#add ();
       let backButtonBox = GPack.button_box `HORIZONTAL ~packing:resultsWindow#vbox#add () in
          let backToConfigButton = GButton.button ~label:"Changer la configuration" ~packing:backButtonBox#add () in
-            backToConfigButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ();start_elec_config ~r:r ~l:l ~c:c ~q0:q0 ~i0:i0 window);
+            backToConfigButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ();start_elec_config ~r:r ~l:l ~c:c ~q0:q0 ~i0:i0 ~forcedMode:forcedMode ~e:e ~ampl:ampl ~pulse:pulse window);
             GMisc.image ~stock:`EDIT ~packing:backToConfigButton#set_image ();
          let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:backButtonBox#add () in
             backToMenuButton#connect#clicked ~callback:(fun () -> resultsWindow#destroy ());
@@ -332,10 +390,12 @@ and display_elec_results window r l c q0 i0 forcedMode pulse amp =
 *                          Fenêtres de configuration 
 ******************************************************************************)
 
-and start_meca_config ?k:(k=("")) ?m:(m="") ?lambda:(lambda="") ?x0:(x0="") ?v0:(v0="") window =
+and start_meca_config ?k:(k=("")) ?m:(m="") ?lambda:(lambda="") ?x0:(x0="") ?v0:(v0="") ?forcedMode:(forcedMode=0) ?h:(h="") ?ampl:(ampl="") ?pulse:(pulse="") window =
   let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur mécanique" ~height:410 ~width:750 ~parent:window ~modal:true ~destroy_with_parent:true () in
 	let messageLabel = GMisc.label ~packing:dialogBox#vbox#add () in
 	let ownInitHBox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
+	   let illustration = GMisc.image ~width:200 ~packing:ownInitHBox#add () in
+		illustration#set_file "./img/oscillator_meca_config.png";
   		let ownParamsFrame = GBin.frame ~label:"Paramètres propres" ~packing:ownInitHBox#add () in
 			let frameContent = GPack.vbox ~spacing:10 ~packing:ownParamsFrame#add () in
 				let kBox = GPack.hbox ~spacing:10 ~packing:frameContent#add () in
@@ -364,15 +424,24 @@ and start_meca_config ?k:(k=("")) ?m:(m="") ?lambda:(lambda="") ?x0:(x0="") ?v0:
      	let forcedRegimeTypeFrameContent = GPack.vbox ~spacing:10 ~packing:forcedRegimeTypeFrame#add () in
         	let regimeTypeBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
            	GMisc.label ~markup:"<b>Type</b> : " ~packing:regimeTypeBox#add (); 
-           	let regimesList = GEdit.combo_box_text ~strings:["Constant";"Sinusoïdal"] ~active:0 ~packing:regimeTypeBox#add () in
-              	let regimesListCBox = match regimesList with (x,y) -> x in
+           	let regimesList = GEdit.combo_box_text ~strings:["Constant";"Sinusoïdal"] ~active:forcedMode ~packing:regimeTypeBox#add () in
+              	let regimesListCBox = fst regimesList in
+              	GMisc.label ~text: " " ~packing:regimeTypeBox#add ();
+         let hBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
+           	let hLabel = GMisc.label ~markup:"<b>F<sub>E</sub></b> : " ~packing:hBox#add () in
+           	let hInput = GEdit.entry ~text:h ~packing:hBox#add () in
+           	GMisc.label ~markup:"cm.s<sup>-1</sup>" ~packing:hBox#add ();
         	let amplBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
            	let amplLabel = GMisc.label ~markup:"<b>Amplitude</b> : " ~packing:amplBox#add () in
-           	let amplInput = GEdit.entry ~editable:false ~packing:amplBox#add () in
+           	let amplInput = GEdit.entry ~text:ampl ~packing:amplBox#add () in
+           	GMisc.label ~text: " " ~packing:amplBox#add ();
+           	amplBox#misc#hide ();
         	let pulseBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
            	let pulseLabel = GMisc.label ~markup:"<b>Pulsation</b> : " ~packing:pulseBox#add () in
-           	let pulseInput = GEdit.entry ~editable:false ~packing:pulseBox#add () in
-        	ignore (regimesListCBox#connect#changed ~callback:(fun () -> if regimesListCBox#active = 0 then (amplInput#set_editable false;amplInput#set_text "";pulseInput#set_editable false;pulseInput#set_text "") else (amplInput#set_editable true;pulseInput#set_editable true)));
+           	let pulseInput = GEdit.entry ~text:pulse ~packing:pulseBox#add () in
+           	GMisc.label ~text: " " ~packing:pulseBox#add ();
+           	pulseBox#misc#hide ();
+        	ignore (regimesListCBox#connect#changed ~callback:(fun () -> if regimesListCBox#active = 1 then (amplBox#misc#show ();pulseBox#misc#show ();hBox#misc#hide ();hInput#set_text "") else (amplBox#misc#hide ();amplInput#set_text "";pulseBox#misc#hide ();pulseInput#set_text "";hBox#misc#show ())));
 	let buttonBox = GPack.button_box `HORIZONTAL ~spacing:10 ~packing:dialogBox#vbox#add () in
    	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
      		backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
@@ -381,7 +450,7 @@ and start_meca_config ?k:(k=("")) ?m:(m="") ?lambda:(lambda="") ?x0:(x0="") ?v0:
    		validateButton#connect#clicked ~callback:(
 			fun () -> (
 				(* Validation du formulaire *)
-      		let validationResult = process_meca_config kInput#text mInput#text lambdaInput#text x0Input#text v0Input#text regimesListCBox#active pulseInput#text amplInput#text in
+      		let validationResult = process_meca_config kInput#text mInput#text lambdaInput#text x0Input#text v0Input#text regimesListCBox#active hInput#text pulseInput#text amplInput#text in
          		(* Affichage des éventuelles erreurs *)
          		if List.exists (fun x -> x = Invalid) (Array.to_list validationResult) then
          		begin
@@ -422,14 +491,21 @@ and start_meca_config ?k:(k=("")) ?m:(m="") ?lambda:(lambda="") ?x0:(x0="") ?v0:
          			end
          			else
             			v0Label#set_text "<b>v<sub>0</sub></b> : ";v0Label#set_use_markup true);
-         			(if Array.get validationResult 5 = Invalid then
+            		(if Array.get validationResult 5 = Invalid then
+         			begin
+            			hLabel#set_text "<span foreground='red'><b>F<sub>E</sub></b> : </span>";
+            			hLabel#set_use_markup true
+         			end
+         			else
+            			hLabel#set_text "<b>F<sub>E</sub></b> : ";hLabel#set_use_markup true);
+         			(if Array.get validationResult 6 = Invalid then
          			begin
             			pulseLabel#set_text "<span foreground='red'><b>Pulsation</b> : </span>";
             			pulseLabel#set_use_markup true
          			end
          			else
             			pulseLabel#set_text "<b>Pulsation</b> : ";pulseLabel#set_use_markup true);
-         			(if Array.get validationResult 6 = Invalid then
+         			(if Array.get validationResult 7 = Invalid then
          			begin
             			amplLabel#set_text "<span foreground='red'><b>Amplitude</b> : </span>";
             			amplLabel#set_use_markup true
@@ -439,15 +515,15 @@ and start_meca_config ?k:(k=("")) ?m:(m="") ?lambda:(lambda="") ?x0:(x0="") ?v0:
 					end
 					else
 					begin
-						let k = kInput#text and m = mInput#text and lambda = lambdaInput#text and x0 = x0Input#text and v0 = v0Input#text and forcedMode = regimesListCBox#active and pulse = pulseInput#text and ampl = amplInput#text in
+						let k = kInput#text and m = mInput#text and lambda = lambdaInput#text and x0 = x0Input#text and v0 = v0Input#text and forcedMode = regimesListCBox#active and h = hInput#text and pulse = pulseInput#text and ampl = amplInput#text in
                   dialogBox#destroy ();
-						display_meca_results window k m lambda x0 v0 forcedMode pulse ampl
+						display_meca_results window k m lambda x0 v0 forcedMode h pulse ampl
 					end
 			));
 			GMisc.image ~stock:`OK ~packing:validateButton#set_image ();
   dialogBox#show ()
 
-and start_elec_config ?r:(r=("")) ?l:(l="") ?c:(c="") ?q0:(q0="") ?i0:(i0="") window =
+and start_elec_config ?r:(r=("")) ?l:(l="") ?c:(c="") ?q0:(q0="") ?i0:(i0="") ?forcedMode:(forcedMode=0) ?e:(e="") ?ampl:(ampl="") ?pulse:(pulse="") window =
   let dialogBox = GWindow.dialog ~title:"Configuration d'un oscillateur électrocinétique" ~height:480 ~width:750 ~parent:window ~modal:true ~destroy_with_parent:true () in
   	let messageLabel = GMisc.label ~packing:dialogBox#vbox#add () in
 	let ownInitHbox = GPack.hbox ~spacing:10 ~packing:dialogBox#vbox#add () in
@@ -481,15 +557,24 @@ and start_elec_config ?r:(r=("")) ?l:(l="") ?c:(c="") ?q0:(q0="") ?i0:(i0="") wi
 		let forcedRegimeTypeFrameContent = GPack.vbox ~spacing:10 ~packing:forcedRegimeTypeFrame#add () in
 			let regimeTypeBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
 				GMisc.label ~markup:"<b>Type</b> : " ~packing:regimeTypeBox#add ();
-				let regimesList = GEdit.combo_box_text ~strings:["Constant";"Sinusoïdal"] ~active:0 ~packing:regimeTypeBox#add () in
-					let regimesListCBox = match regimesList with (x,y) -> x in
-			let amplBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
-				let amplLabel = GMisc.label ~markup:"<b>Amplitude</b> : " ~packing:amplBox#add () in
-				let amplInput = GEdit.entry ~editable:false ~packing:amplBox#add () in
-			let pulseBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
-            let pulseLabel = GMisc.label ~markup:"<b>Pulsation</b> : " ~packing:pulseBox#add () in
-				let pulseInput = GEdit.entry ~editable:false ~packing:pulseBox#add () in
-			ignore (regimesListCBox#connect#changed ~callback:(fun () -> if regimesListCBox#active = 0 then (amplInput#set_editable false;amplInput#set_text "";pulseInput#set_editable false;pulseInput#set_text "") else (amplInput#set_editable true;pulseInput#set_editable true)));
+				let regimesList = GEdit.combo_box_text ~strings:["Constant";"Sinusoïdal"] ~active:forcedMode ~packing:regimeTypeBox#add () in
+					let regimesListCBox = fst regimesList in
+					GMisc.label ~text: " " ~packing:regimeTypeBox#add ();
+			let eBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
+           	let eLabel = GMisc.label ~markup:"<b>E</b> : " ~packing:eBox#add () in
+           	let eInput = GEdit.entry ~text:e ~packing:eBox#add () in
+           	GMisc.label ~markup:"V" ~packing:eBox#add ();
+        	let amplBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
+           	let amplLabel = GMisc.label ~markup:"<b>Amplitude</b> : " ~packing:amplBox#add () in
+           	let amplInput = GEdit.entry ~text:ampl ~packing:amplBox#add () in
+           	GMisc.label ~text: " " ~packing:amplBox#add ();
+           	amplBox#misc#hide ();
+        	let pulseBox = GPack.hbox ~spacing:10 ~packing:forcedRegimeTypeFrameContent#add () in
+           	let pulseLabel = GMisc.label ~markup:"<b>Pulsation</b> : " ~packing:pulseBox#add () in
+           	let pulseInput = GEdit.entry ~text:pulse ~packing:pulseBox#add () in
+           	GMisc.label ~text: " " ~packing:pulseBox#add ();
+           	pulseBox#misc#hide ();
+        	ignore (regimesListCBox#connect#changed ~callback:(fun () -> if regimesListCBox#active = 1 then (amplBox#misc#show ();pulseBox#misc#show ();eBox#misc#hide ();eInput#set_text "") else (amplBox#misc#hide ();amplInput#set_text "";pulseBox#misc#hide ();pulseInput#set_text "";eBox#misc#show ())));
    	let buttonBox = GPack.button_box `HORIZONTAL ~spacing:10 ~packing:dialogBox#vbox#add () in
 	let backToMenuButton = GButton.button ~label:"Retour au menu" ~packing:buttonBox#add () in
     	backToMenuButton#connect#clicked ~callback:(fun () -> dialogBox#destroy ());
@@ -498,7 +583,7 @@ and start_elec_config ?r:(r=("")) ?l:(l="") ?c:(c="") ?q0:(q0="") ?i0:(i0="") wi
 	validateButton#connect#clicked ~callback:(
 	fun () -> (
 		(* Validation du formulaire *)
-		let validationResult = process_elec_config rInput#text lInput#text cInput#text q0Input#text i0Input#text regimesListCBox#active pulseInput#text amplInput#text in
+		let validationResult = process_elec_config rInput#text lInput#text cInput#text q0Input#text i0Input#text regimesListCBox#active eInput#text pulseInput#text amplInput#text in
 			(* Affichage des éventuelles erreurs *)
 			if List.exists (fun x -> x = Invalid) (Array.to_list validationResult) then
    		begin
@@ -539,14 +624,21 @@ and start_elec_config ?r:(r=("")) ?l:(l="") ?c:(c="") ?q0:(q0="") ?i0:(i0="") wi
             end    
             else
                i0Label#set_text "<b>i<sub>0</sub></b> : ";i0Label#set_use_markup true);
-			   (if Array.get validationResult 5 = Invalid then
+            (if Array.get validationResult 5 = Invalid then
+            begin
+               eLabel#set_text "<span foreground='red'><b>E</b> : </span>";
+               eLabel#set_use_markup true
+            end    
+            else
+               eLabel#set_text "<b>E</b> : ";eLabel#set_use_markup true);
+			   (if Array.get validationResult 6 = Invalid then
             begin
                pulseLabel#set_text "<span foreground='red'><b>Pulsation</b> : </span>";
                pulseLabel#set_use_markup true
             end    
             else
                pulseLabel#set_text "<b>Pulsation</b> : ";pulseLabel#set_use_markup true);
-			   (if Array.get validationResult 6 = Invalid then
+			   (if Array.get validationResult 7 = Invalid then
             begin
                amplLabel#set_text "<span foreground='red'><b>Amplitude</b> : </span>";
                amplLabel#set_use_markup true
@@ -556,9 +648,9 @@ and start_elec_config ?r:(r=("")) ?l:(l="") ?c:(c="") ?q0:(q0="") ?i0:(i0="") wi
          end
 		   else
 		   begin
-			   let r = rInput#text and l = lInput#text and c = cInput#text and q0 = q0Input#text and i0 = i0Input#text and forcedMode = regimesListCBox#active and pulse = pulseInput#text and ampl = amplInput#text in
+			   let r = rInput#text and l = lInput#text and c = cInput#text and q0 = q0Input#text and i0 = i0Input#text and forcedMode = regimesListCBox#active and e = eInput#text and pulse = pulseInput#text and ampl = amplInput#text in
             dialogBox#destroy ();
-			   display_elec_results window r l c q0 i0 forcedMode pulse ampl
+			   display_elec_results window r l c q0 i0 forcedMode e pulse ampl
 	      end
 	));
 	GMisc.image ~stock:`OK ~packing:validateButton#set_image ();
